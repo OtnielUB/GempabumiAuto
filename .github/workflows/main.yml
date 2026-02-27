@@ -1,0 +1,36 @@
+name: Earthquake Bot
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # Runs every 5 mins
+  workflow_dispatch:        # Manual test button
+
+permissions:
+  contents: write           # Required to update last_quake.txt
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check Earthquake
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python earthquake_bot.py
+
+      - name: Commit Change
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add last_quake.txt
+          git commit -m "Update last earthquake [skip ci]" || echo "No changes"
+          git push
