@@ -4,6 +4,8 @@ import os
 # Settings
 API_URL = "https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json"
 WEBHOOK_URL = os.getenv("DISCORD_WEBHOOK")
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 LOG_FILE = "last_quake.txt"
 
 def get_last_id():
@@ -31,7 +33,25 @@ try:
                 "footer": {"text": f"Waktu: {data['Tanggal']} | {data['Jam']}"}
             }]
         }
-        requests.post(WEBHOOK_URL, json=payload)
+        if WEBHOOK_URL:
+            requests.post(WEBHOOK_URL, json=payload)
+
+        if TELEGRAM_TOKEN and TELEGRAM_CHAT_ID:
+            tg_message = (
+                f"🚨 *Gempa Terkini: M {data['Magnitude']}*\n"
+                f"📍 *Wilayah:* {data['Wilayah']}\n"
+                f"⬇️ *Kedalaman:* {data['Kedalaman']}\n"
+                f"⚠️ *Potensi:* {data['Potensi']}\n"
+                f"🕒 *Waktu:* {data['Tanggal']} | {data['Jam']}\n"
+                f"[Peta Guncangan]({shakemap})"
+            )
+            tg_url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+            tg_payload = {
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": tg_message,
+                "parse_mode": "Markdown"
+            }
+            requests.post(tg_url, json=tg_payload)
 
         # Update the local file for GitHub to commit
         with open(LOG_FILE, "w") as f:
